@@ -1,6 +1,6 @@
 # Credit Card Fraud Detection: Big Data Analytics Capstone
 
-HCL GUVI × Jain University · Big Data Analytics Capstone · Group 2
+HCL GUVI × Jain University · Big Data Analytics Capstone
 
 An end-to-end Big Data pipeline over **1,000,000 card transactions**: data in **HDFS**, SQL analysis in **Hive**, distributed analytics and fraud-risk models in **Spark / PySpark** on **YARN**, with **HBase** and **Pig** as supporting tools. Everything runs as containers in the course Docker Compose environment.
 
