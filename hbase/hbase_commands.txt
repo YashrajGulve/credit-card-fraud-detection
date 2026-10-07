@@ -1,0 +1,24 @@
+# HBase: card risk-profile lookup store (run in: hbase shell)
+# Why HBase: fraud screening needs millisecond lookup of ONE card's history by key;
+# HDFS/Hive scans are built for large analytical reads, not single-row lookups.
+
+create 'card_risk', 'profile'
+# Row key = card_id (e.g. C100123). Column family 'profile' holds the summary produced by Spark.
+
+put 'card_risk', 'C100123', 'profile:txns',        '14'
+put 'card_risk', 'C100123', 'profile:fraud_txns',  '2'
+put 'card_risk', 'C100123', 'profile:avg_amount',  '1840.50'
+put 'card_risk', 'C100123', 'profile:max_txn_24h', '6'
+put 'card_risk', 'C100123', 'profile:risk_flag',   'HIGH'
+
+get  'card_risk', 'C100123'
+scan 'card_risk', {LIMIT => 5}
+scan 'card_risk', {FILTER => "SingleColumnValueFilter('profile','risk_flag',=,'binary:HIGH')"}
+count 'card_risk'
+describe 'card_risk'
+
+# Bulk load: export Spark's results/card_risk_profile CSV to HDFS, then use ImportTsv:
+# hbase org.apache.hadoop.hbase.mapreduce.ImportTsv -Dimporttsv.separator=, \
+#   -Dimporttsv.columns=HBASE_ROW_KEY,profile:txns,profile:fraud_txns,profile:avg_amount,profile:max_txn_24h,profile:risk_flag \
+#   card_risk /data/fraud/results/card_risk_profile/part-*.csv
+# (remove the CSV header line first)
