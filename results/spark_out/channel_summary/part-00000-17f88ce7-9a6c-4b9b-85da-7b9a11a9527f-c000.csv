@@ -1,0 +1,5 @@
+channel,txns,fraud_txns,fraud_pct,fraud_amount
+Online,299425,3641,1.216,7828578.33
+ATM,69730,377,0.541,5607000.0
+Contactless,250349,519,0.207,1243104.11
+POS,380496,753,0.198,1642766.48

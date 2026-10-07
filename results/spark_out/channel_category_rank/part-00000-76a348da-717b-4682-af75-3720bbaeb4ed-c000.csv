@@ -1,0 +1,13 @@
+channel,merchant_category,txns,fraud_pct,rank_in_channel
+ATM,Jewelry,1355,2.288,1
+ATM,Gift Cards,1389,2.16,2
+ATM,Electronics,4110,1.655,3
+Contactless,Gift Cards,5098,1.02,1
+Contactless,Jewelry,4926,0.853,2
+Contactless,Electronics,15137,0.515,3
+Online,Gift Cards,6008,4.511,1
+Online,Jewelry,6027,4.148,2
+Online,Electronics,18045,3.048,3
+POS,Gift Cards,7423,0.701,1
+POS,Jewelry,7555,0.649,2
+POS,Electronics,22760,0.576,3

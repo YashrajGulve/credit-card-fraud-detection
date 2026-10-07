@@ -1,0 +1,2 @@
+total_txns,fraud_txns,fraud_pct,fraud_amount,avg_amount
+1000000,5290,0.529,16321448.92,1910.09

@@ -1,0 +1,284 @@
+{
+ "records": 1000000,
+ "input_partitions": 2,
+ "timings_sec": {
+  "read_and_count": 7.6,
+  "quality_checks": 15.0,
+  "transform_cache": 22.8,
+  "aggregations_and_write": 36.9,
+  "parquet_write": 42.3,
+  "train_logreg": 59.4,
+  "train_random_forest": 114.6,
+  "train_gbt": 174.7,
+  "evaluate": 218.5
+ },
+ "quality": {
+  "null_counts": {
+   "transaction_id": 0,
+   "transaction_ts": 0,
+   "card_id": 0,
+   "customer_age": 0,
+   "customer_state": 0,
+   "merchant_id": 0,
+   "merchant_category": 0,
+   "channel": 0,
+   "amount": 0,
+   "card_present": 0,
+   "distance_from_home_km": 0,
+   "txn_count_24h": 0,
+   "minutes_since_last_txn": 0,
+   "is_international": 0,
+   "amount_vs_card_avg": 0,
+   "is_fraud": 0
+  },
+  "negative_or_zero_amount": 0,
+  "invalid_label": 0,
+  "duplicate_transaction_ids": 0
+ },
+ "cached_partitions": 8,
+ "card_risk_distribution": {
+  "LOW": 78212,
+  "MEDIUM": 4959,
+  "HIGH": 161
+ },
+ "distinct_cards": 83332,
+ "split": {
+  "train_rows": 748341,
+  "test_rows": 251659,
+  "train_fraud_pct": 0.53,
+  "test_fraud_pct": 0.525
+ },
+ "results": [
+  {
+   "model": "Logistic Regression",
+   "auc_roc": 0.8609,
+   "auc_pr": 0.0777,
+   "top1pct": {
+    "flagged": 2602,
+    "caught_fraud": 312,
+    "recall_pct": 23.6,
+    "precision_pct": 11.99,
+    "lift": 22.8,
+    "fraud_amount_caught_pct": 23.8
+   },
+   "top5pct": {
+    "flagged": 12661,
+    "caught_fraud": 640,
+    "recall_pct": 48.41,
+    "precision_pct": 5.05,
+    "lift": 9.6,
+    "fraud_amount_caught_pct": 54.57
+   },
+   "confusion_top1pct": {
+    "actual0_pred1": 2290,
+    "actual1_pred0": 1010,
+    "actual0_pred0": 248047,
+    "actual1_pred1": 312
+   }
+  },
+  {
+   "model": "Random Forest",
+   "auc_roc": 0.8412,
+   "auc_pr": 0.0559,
+   "top1pct": {
+    "flagged": 2610,
+    "caught_fraud": 241,
+    "recall_pct": 18.23,
+    "precision_pct": 9.23,
+    "lift": 17.6,
+    "fraud_amount_caught_pct": 14.41
+   },
+   "top5pct": {
+    "flagged": 12617,
+    "caught_fraud": 574,
+    "recall_pct": 43.42,
+    "precision_pct": 4.55,
+    "lift": 8.7,
+    "fraud_amount_caught_pct": 40.0
+   },
+   "confusion_top1pct": {
+    "actual0_pred1": 2369,
+    "actual1_pred0": 1081,
+    "actual0_pred0": 247968,
+    "actual1_pred1": 241
+   }
+  },
+  {
+   "model": "Gradient Boosted Trees",
+   "auc_roc": 0.8547,
+   "auc_pr": 0.0696,
+   "top1pct": {
+    "flagged": 2589,
+    "caught_fraud": 282,
+    "recall_pct": 21.33,
+    "precision_pct": 10.89,
+    "lift": 20.7,
+    "fraud_amount_caught_pct": 24.47
+   },
+   "top5pct": {
+    "flagged": 12651,
+    "caught_fraud": 604,
+    "recall_pct": 45.69,
+    "precision_pct": 4.77,
+    "lift": 9.1,
+    "fraud_amount_caught_pct": 48.58
+   },
+   "confusion_top1pct": {
+    "actual0_pred1": 2307,
+    "actual1_pred0": 1040,
+    "actual0_pred0": 248030,
+    "actual1_pred1": 282
+   }
+  }
+ ],
+ "rf_feature_importance": [
+  [
+   "amount_vs_card_avg",
+   0.1871
+  ],
+  [
+   "distance_from_home_km",
+   0.1589
+  ],
+  [
+   "channel=Contactless",
+   0.1293
+  ],
+  [
+   "card_present",
+   0.1274
+  ],
+  [
+   "txn_count_24h",
+   0.053
+  ],
+  [
+   "is_international",
+   0.0515
+  ],
+  [
+   "log_amount",
+   0.0515
+  ],
+  [
+   "channel=Online",
+   0.0416
+  ],
+  [
+   "high_velocity",
+   0.0412
+  ],
+  [
+   "merchant_category=Electronics",
+   0.0257
+  ],
+  [
+   "merchant_category=Gift Cards",
+   0.0166
+  ],
+  [
+   "merchant_category=Grocery",
+   0.0159
+  ]
+ ],
+ "gbt_feature_importance": [
+  [
+   "amount_vs_card_avg",
+   0.1241
+  ],
+  [
+   "distance_from_home_km",
+   0.0968
+  ],
+  [
+   "txn_count_24h",
+   0.0887
+  ],
+  [
+   "merchant_category=Gift Cards",
+   0.0772
+  ],
+  [
+   "log_amount",
+   0.0726
+  ],
+  [
+   "channel=Contactless",
+   0.0719
+  ],
+  [
+   "merchant_category=Electronics",
+   0.0629
+  ],
+  [
+   "channel=POS",
+   0.0583
+  ],
+  [
+   "is_night",
+   0.0569
+  ],
+  [
+   "is_international",
+   0.0471
+  ],
+  [
+   "merchant_category=Grocery",
+   0.0452
+  ],
+  [
+   "merchant_category=Utilities",
+   0.0403
+  ]
+ ],
+ "lr_numeric_coefficients": [
+  [
+   "merchant_category=Gift Cards",
+   1.442
+  ],
+  [
+   "is_international",
+   1.427
+  ],
+  [
+   "channel=POS",
+   1.173
+  ],
+  [
+   "merchant_category=Utilities",
+   -1.09
+  ],
+  [
+   "is_night",
+   0.898
+  ],
+  [
+   "amount_vs_card_avg",
+   0.857
+  ],
+  [
+   "merchant_category=Electronics",
+   0.853
+  ],
+  [
+   "merchant_category=Healthcare",
+   -0.83
+  ],
+  [
+   "high_velocity",
+   0.816
+  ],
+  [
+   "rapid_repeat",
+   0.751
+  ],
+  [
+   "merchant_category=Grocery",
+   -0.705
+  ],
+  [
+   "merchant_category=Travel",
+   0.572
+  ]
+ ]
+}

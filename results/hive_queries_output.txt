@@ -1,0 +1,124 @@
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+  require_minimum_pandas_version()
+  require_minimum_pandas_version()
+  [PACKAGE_NOT_INSTALLED] PyArrow >= 18.0.0 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+[Stage 2:>                                                          (0 + 2) / 2][Stage 2:=============================>                             (1 + 1) / 2]                                                                                
+=== Q1 ===
+ total_txns  fraud_txns fraud_pct  fraud_amount  avg_amount
+    1000000        5290     0.529   16321448.92     1910.09
+  require_minimum_pandas_version()
+  [PACKAGE_NOT_INSTALLED] PyArrow >= 18.0.0 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+[Stage 5:>                                                          (0 + 2) / 2][Stage 5:=============================>                             (1 + 1) / 2]                                                                                
+=== Q2 ===
+merchant_category   txns  fraud_txns fraud_pct  fraud_amount
+       Gift Cards  19918         405     2.033     906340.28
+          Jewelry  19863         372     1.873    1644687.67
+      Electronics  60052         827     1.377    4442366.81
+           Travel  49569         470     0.948    2327899.32
+  Online Services  69725         521     0.747    1036895.37
+    Entertainment  80311         434     0.540     928022.29
+          Apparel  90227         436     0.483     895519.46
+             Fuel 120275         486     0.404    1014495.70
+       Restaurant 150051         483     0.322    1137364.77
+          Grocery 200076         556     0.278    1284927.24
+       Healthcare  59998         141     0.235     356983.14
+        Utilities  79935         159     0.199     345946.87
+  require_minimum_pandas_version()
+  [PACKAGE_NOT_INSTALLED] PyArrow >= 18.0.0 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+[Stage 13:>                                                         (0 + 2) / 2][Stage 13:=============================>                            (1 + 1) / 2]                                                                                
+=== Q3 ===
+    channel  card_present   txns  fraud_txns fraud_pct
+     Online             0 299425        3641     1.216
+        ATM             1  69730         377     0.541
+Contactless             1 250349         519     0.207
+        POS             1 380496         753     0.198
+  require_minimum_pandas_version()
+  [PACKAGE_NOT_INSTALLED] PyArrow >= 18.0.0 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+[Stage 21:>                                                         (0 + 2) / 2][Stage 21:=============================>                            (1 + 1) / 2]                                                                                
+=== Q4 ===
+ txn_hour  txns  fraud_txns fraud_pct
+        0  9264         110     1.187
+        1  9188         102     1.110
+        2  9134         108     1.182
+        3  9304         103     1.107
+        4  9079         105     1.157
+        5 18441          93     0.504
+        6 27950         146     0.522
+        7 46049         231     0.502
+        8 55747         292     0.524
+        9 55525         283     0.510
+       10 55779         276     0.495
+       11 64953         291     0.448
+       12 64762         332     0.513
+       13 55213         244     0.442
+       14 55533         258     0.465
+       15 55522         253     0.456
+       16 55343         261     0.472
+       17 64966         324     0.499
+       18 64946         285     0.439
+       19 64417         335     0.520
+       20 55726         284     0.510
+       21 46416         220     0.474
+       22 28148         133     0.473
+       23 18595         221     1.188
+  require_minimum_pandas_version()
+  [PACKAGE_NOT_INSTALLED] PyArrow >= 18.0.0 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+[Stage 29:>                                                         (0 + 2) / 2]                                                                                
+=== Q5 ===
+ amount_band   txns  fraud_txns fraud_pct
+     1. <500 298155        1107     0.371
+ 2. 500-1999 466522        2264     0.485
+3. 2000-4999 155686        1168     0.750
+4. 5000-9999  42296         375     0.887
+   5. 10000+  37341         376     1.007
+  require_minimum_pandas_version()
+  [PACKAGE_NOT_INSTALLED] PyArrow >= 18.0.0 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+[Stage 37:>                                                         (0 + 2) / 2]                                                                                
+=== Q6 ===
+ txn_month  txns  fraud_txns fraud_pct
+         1 84884         426     0.502
+         2 76817         408     0.531
+         3 85046         443     0.521
+         4 82232         429     0.522
+         5 85108         447     0.525
+         6 82025         444     0.541
+         7 85059         455     0.535
+         8 84776         475     0.560
+         9 82394         441     0.535
+        10 84905         443     0.522
+        11 81678         434     0.531
+        12 85076         445     0.523
+  require_minimum_pandas_version()
+  [PACKAGE_NOT_INSTALLED] PyArrow >= 18.0.0 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+[Stage 45:>                                                         (0 + 2) / 2]                                                                                
+=== Q7 ===
+ is_international velocity_flag   txns  fraud_txns fraud_pct
+                1 HIGH_VELOCITY   2686         199     7.409
+                1        NORMAL  31798         761     2.393
+                0 HIGH_VELOCITY  76034         949     1.248
+                0        NORMAL 889482        3381     0.380
+  require_minimum_pandas_version()
+  [PACKAGE_NOT_INSTALLED] PyArrow >= 18.0.0 must be installed; however, it was not found.
+Attempting non-optimization as 'spark.sql.execution.arrow.pyspark.fallback.enabled' is set to true.
+[Stage 53:>                                                         (0 + 2) / 2]                                                                                
+=== Q8 ===
+merchant_id  txns  fraud_txns fraud_pct
+      M4049   208           7     3.365
+      M1767   205           6     2.927
+      M1243   182           5     2.747
+      M3633   184           5     2.717
+      M3318   186           5     2.688
+      M2856   186           5     2.688
+      M4248   224           6     2.679
+      M1316   191           5     2.618
+      M4819   191           5     2.618
+      M4172   193           5     2.591

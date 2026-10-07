@@ -1,0 +1,5 @@
+is_international,velocity_flag,txns,fraud_txns,fraud_pct
+1,HIGH_VELOCITY,2686,199,7.409
+1,NORMAL,31798,761,2.393
+0,HIGH_VELOCITY,76034,949,1.248
+0,NORMAL,889482,3381,0.380

@@ -1,0 +1,5 @@
+region,txns,fraud_txns,fraud_pct
+North,200098,1071,0.535
+West,299906,1598,0.533
+South,400129,2129,0.532
+East,99867,492,0.493
