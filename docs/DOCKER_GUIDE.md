@@ -12,6 +12,27 @@ Container names, profiles and ports below are common defaults. Confirm yours wit
 | jupyter | PySpark notebook | 8888 |
 | hbase, pig | HBase, Pig | 16010 |
 
+## Quick path with the supplied `docker-compose.full.yml`
+
+`docker-compose.full.yml` (repo root, supplied by the course, unmodified) starts a Spark master and one worker (Spark 3.5.7) on the existing network `big_data_pj_default`.
+It does **not** include HDFS, Hive, YARN or Jupyter. HDFS, Hive and YARN come from the course's core compose file, which must be started first because it creates that network. There is no Jupyter service in this file, so `localhost:8888` is not available from it.
+
+Because the file sits in the repo root, its mounts line up with the project folders: `./spark` appears in the containers as `/workspace/spark` and `./results` as `/workspace/results`. Spark output written under `/workspace/results` therefore lands in this repo's `results/` folder.
+
+    docker network ls | findstr big_data_pj                      # network must exist (start the core stack first)
+    docker compose -f docker-compose.full.yml up -d
+    docker exec spark-master which python3                       # must print a path, otherwise PySpark cannot run
+
+Web pages: Spark master http://localhost:8080, worker http://localhost:8081.
+
+Copy `transactions.csv` (generate it with `data/generate_dataset.py`) into the `spark` folder, then:
+
+    docker exec -it spark-master /opt/spark/bin/spark-submit --master spark://spark-master:7077 \
+        /workspace/spark/hdfs_connect.py --local-csv /workspace/spark/transactions.csv --run-analysis
+
+`hdfs_connect.py` defaults to `hdfs://namenode:8020`. If the core file uses another service name or port, pass `--hdfs-uri`. Do not commit `spark/transactions.csv` (it is large).
+The sections below describe the same steps in general form; where they use `docker cp`, the mounted folders above replace it.
+
 ## 1. Start and check
 
     docker compose --profile full up -d     # profile flag as given by your trainer

@@ -19,3 +19,7 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# CSV copied next to the Spark scripts for Docker runs
+spark/transactions.csv
+spark/*.csv
