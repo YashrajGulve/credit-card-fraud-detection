@@ -139,7 +139,8 @@ CALLOUT("Read this first: what is real and what you must still run",
         "EXECUTED: every number in Sections 10 to 13 was produced by running the supplied Hive-style SQL (via Spark SQL) and the PySpark pipeline "
         "on the full 1M rows in Spark local mode (2 cores). Timings are from that run.\n"
         "NOT EXECUTED HERE: the HDFS, Hive, YARN, HBase and Pig commands are written and ready but need your Docker Compose environment. "
-        "Run them and paste your own screenshots into the evidence placeholders; the trainer will ask you to demonstrate them live.",
+        "Run them and paste your own screenshots into the evidence placeholders; the trainer will ask you to demonstrate them live. "
+        "The connector script spark/hdfs_connect.py (Section 9.1) was tested end to end against a local file system standing in for HDFS, not against real HDFS containers.",
         fill="FFF4E0", edge="D98E04")
 
 # ================= 1-4 =================
@@ -241,6 +242,25 @@ hdfs fsck /data/fraud/raw/transactions.csv -files -blocks -locations""")
 B("The client asks the NameNode where to write; the file is split into blocks (128 MB default, so this 93 MB file is one block); blocks are written to DataNodes and replicated (replication factor 3 by default, 1 in a single-DataNode training setup).", "What happens on upload: ")
 B("The NameNode stores only metadata (names, blocks, locations); DataNodes store the actual block data and send heartbeats to the NameNode.", "NameNode vs DataNode: ")
 CALLOUT("Your evidence (paste screenshots)", "[ Screenshot 1: hdfs dfs -ls -h /data/fraud/raw/ ]    [ Screenshot 2: hdfs fsck block report ]    [ Screenshot 3: NameNode UI file browser ]", fill="F3F6FA", edge="9DB3CC")
+
+H("9.1 Connecting from Docker with spark/hdfs_connect.py", 2)
+P("One Python script performs the whole ingestion from inside the Docker network: it connects to the NameNode, creates the three HDFS folders, uploads the CSV, lists and measures the files, reads the data back, and can then run the full analysis against HDFS. Run it in a container that shares the compose network (for example spark-master), so the host name namenode resolves.")
+CODE("""docker cp spark/. spark-master:/opt/fraud/
+docker cp transactions.csv spark-master:/tmp/transactions.csv
+docker exec -it spark-master spark-submit --master spark://spark-master:7077 \\
+    /opt/fraud/hdfs_connect.py --local-csv /tmp/transactions.csv --run-analysis
+
+# connection test only
+docker exec -it spark-master spark-submit /opt/fraud/hdfs_connect.py --check-only""")
+T(["Flag", "Default", "Purpose"], [
+ ["--hdfs-uri", "hdfs://namenode:8020", "NameNode address (service name from the compose file)"],
+ ["--base", "/data/fraud", "Root HDFS folder (raw, processed, results)"],
+ ["--master", "from spark-submit, else local[2]", "yarn or spark://spark-master:7077"],
+ ["--local-csv", "none", "Local file to upload to <base>/raw/transactions.csv"],
+ ["--overwrite / --check-only / --run-analysis", "off", "Replace file / test connection only / run the analysis on HDFS data"],
+], widths=[5.2, 4.6, 7.2], size=8.8)
+CALLOUT("What was tested", "The script was run end to end on 150,000 generated rows against a local file system standing in for HDFS (same Hadoop client calls: connect, mkdirs, upload, list, read back, analysis, results written to the results folder, Parquet written to the processed folder). "
+        "It has not been run against your NameNode. If a step fails, the usual causes are the wrong service name or port (check docker ps and the compose file) or running it outside the compose network.", fill="FFF4E0", edge="D98E04")
 
 # ================= 10 HIVE =================
 H("10. Hive: Database, Table Design and Query Results")
@@ -450,7 +470,7 @@ CODE("""credit-card-fraud-bigdata/
 |   |-- sample/transactions_sample_4000.csv
 |-- hdfs/hdfs_commands.txt
 |-- hive/01_create_database.sql  02_create_tables.sql  03_analysis_queries.sql
-|-- spark/fraud_analysis.py  run_sql_queries.py  make_charts.py
+|-- spark/hdfs_connect.py  fraud_analysis.py  run_sql_queries.py  make_charts.py
 |-- hbase/hbase_commands.txt
 |-- pig/fraud_analysis.pig
 |-- results/ (hive/*.csv, spark_out/*, pipeline_metrics.json)
@@ -479,6 +499,8 @@ T(["Challenge", "Solution"], [
  ["Bug while building the pipeline: a Python list alias made feature names include categorical names in the coefficient list", "Copied the list (list(num_cols)); output re-run and verified"],
  ["PySpark failed to install with the system setuptools", "Created a virtual environment with an upgraded setuptools and installed pyspark there"],
  ["Hive server not available in the build environment", "Wrote HiveQL-compatible SQL, ran the same statements via Spark SQL, and flagged that Beeline output must be re-checked"],
+ ["Hard-coded local master meant --master yarn was silently ignored; metrics were written with a local open() on an hdfs:// path; processed path contained '..'", "Master now chosen by the launcher or SPARK_MASTER; metrics saved through Spark; processed path derived cleanly (found while writing hdfs_connect.py)"],
+ ["Reaching HDFS from outside the Docker network fails (DataNode host names do not resolve)", "Run the connector inside a container on the compose network"],
 ], widths=[7.5, 9.5], size=9)
 H("21. Limitations")
 for t in ["The dataset is synthetic; findings demonstrate the method and are not evidence about real fraud.",
@@ -514,7 +536,23 @@ QA = [
 for qn_, a in QA: RP([("Q. " + qn_ + "  ", True), (a, False)])
 
 # ================= 24 EVALUATION MAP =================
-H("24. 100-Mark Evaluation Map")
+H("24. Minimum Technical Requirements Check")
+P("The student guide lists what every project must contain. Status shows what exists in this repository today and what you still have to produce in your own environment.")
+T(["Requirement (Student Guide section 5)", "Where", "Status"], [
+ ["Clear business problem and analytics objective", "Sections 2 to 4", "Done"],
+ ["Dataset description, source and important columns", "Sections 5, 6; data/README.md", "Done (synthetic data, stated clearly)"],
+ ["Dataset stored and managed through HDFS", "Section 9, 9.1; hdfs/, spark/hdfs_connect.py", "Scripts ready; you run them in Docker"],
+ ["Relevant HDFS commands demonstrated", "Section 9; hdfs/hdfs_commands.txt", "Ready; add screenshots"],
+ ["At least one Hive database/table and queries", "Section 10; hive/", "Written; results produced with Spark SQL; run in Beeline and compare"],
+ ["At least one Spark / PySpark workflow", "Sections 11, 12", "Executed on 1M rows (local mode)"],
+ ["Data cleaning, transformation and analytical results", "Sections 11, 16", "Executed"],
+ ["Evidence of distributed processing", "Section 17", "Partly: local mode only; add Spark UI and YARN screenshots from the cluster run"],
+ ["HBase or Pig evidence", "Section 14; hbase/, pig/", "Scripts ready; run and add screenshots"],
+ ["Git/GitHub repository with meaningful commits", "Section 18", "Repository prepared with 10 commits; you push it; teammates commit their own folders"],
+ ["README with setup, architecture, execution and results", "README.md", "Done"],
+ ["Final PPT and individual contribution sheet", "Capstone deck (.pptx); Appendix A", "Deck built; contribution sheet to fill in"],
+], widths=[7.0, 5.0, 5.0], size=8.8)
+H("25. 100-Mark Evaluation Map")
 T(["Area", "Marks", "Where covered in this document", "Your action"], [
  ["Business problem and objective", "10", "Sections 2 to 4", "Review and own it"],
  ["Big Data architecture", "10", "Sections 7, 8, 15", "Redraw diagram in PPT"],
@@ -527,10 +565,17 @@ T(["Area", "Marks", "Where covered in this document", "Your action"], [
  ["Final demo / presentation", "5", "Section 16 (story)", "Build 10-minute PPT"],
  ["Individual contribution", "10", "Section 19, 23", "Each student explains own part"],
 ], widths=[4.8, 1.5, 6.0, 4.7], size=8.8)
-H("25. Final Submission Checklist")
+H("26. Final Submission Checklist")
 T(["Item", "Status"], [[x, "[ ]"] for x in ["Problem statement", "Dataset description", "Architecture", "HDFS ingestion + screenshots", "Hive database, tables, queries + screenshots",
   "Spark / PySpark notebook run + Spark UI screenshot", "Transformations and analytics", "HBase / Pig evidence", "Final results validated", "GitHub repository", "README", "PPT", "Individual contribution sheet"]],
   widths=[12, 3], size=9)
+
+
+H("Appendix A. Individual Contribution Sheet")
+P("Each student completes one block. The trainer may ask any student to open the code or commands listed here and explain them.")
+for i, (role, files) in enumerate([("Data ingestion + HDFS", "hdfs/, data/, spark/hdfs_connect.py"), ("Hive + data modelling", "hive/"), ("Spark + PySpark", "spark/fraud_analysis.py, notebook"), ("HBase / Pig (advanced technology)", "hbase/, pig/"), ("Integration + documentation", "README.md, docs/, results/")], 1):
+    T([f"Student {i}: {role}", ""], [["Name / roll number", ""], ["What I implemented", ""], ["Files and commits (links)", files + "  |  commits: "], ["Commands / code I can demonstrate", ""],
+        ["Technical problem I faced and how I solved it", ""], ["Questions I can answer", ""]], widths=[6.0, 11.0], size=8.8, hl_first_col=True)
 
 doc.save("docs/Credit_Card_Fraud_Detection_Big_Data_Project.docx")
 print("saved; checks passed:", len(checks))

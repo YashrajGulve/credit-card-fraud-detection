@@ -66,6 +66,7 @@ Java 17 or newer is needed for PySpark.
 | Document | Purpose |
 |---|---|
 | [docs/Credit_Card_Fraud_Detection_Big_Data_Project.docx](docs/Credit_Card_Fraud_Detection_Big_Data_Project.docx) | Full project report in the capstone template |
+| [docs/Credit_Card_Fraud_Detection_Capstone.pptx](docs/Credit_Card_Fraud_Detection_Capstone.pptx) | 13-slide presentation following the 10-minute structure |
 | [data/README.md](data/README.md) | Dataset and data dictionary |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components and data flow |
 | [docs/DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md) | Run, verify and troubleshoot in Docker |
