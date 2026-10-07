@@ -1,0 +1,29 @@
+# ===== HDFS ingestion - Credit Card Fraud Detection =====
+# Run inside the namenode container:  docker exec -it namenode bash
+
+# 1. Create directory structure
+hdfs dfs -mkdir -p /data/fraud/raw
+hdfs dfs -mkdir -p /data/fraud/processed
+hdfs dfs -mkdir -p /data/fraud/results
+
+# 2. Upload the dataset (copy it into the container first: docker cp transactions.csv namenode:/tmp/)
+hdfs dfs -put /tmp/transactions.csv /data/fraud/raw/
+
+# 3. Verify
+hdfs dfs -ls -h /data/fraud/raw/
+hdfs dfs -du -h /data/fraud/raw/
+hdfs dfs -cat /data/fraud/raw/transactions.csv | head -5
+hdfs dfs -count /data/fraud
+hdfs fsck /data/fraud/raw/transactions.csv -files -blocks -locations   # block + DataNode evidence
+hdfs dfs -stat "%n %b bytes, replication=%r, blocksize=%o" /data/fraud/raw/transactions.csv
+
+# 4. Other file operations to be ready to explain
+hdfs dfs -get /data/fraud/results/category_summary ./category_summary_local
+hdfs dfs -cp /data/fraud/raw/transactions.csv /data/fraud/processed/transactions_copy.csv
+hdfs dfs -mv /data/fraud/processed/transactions_copy.csv /data/fraud/processed/transactions_backup.csv
+hdfs dfs -rm /data/fraud/processed/transactions_backup.csv
+hdfs dfs -setrep -w 1 /data/fraud/raw/transactions.csv
+hdfs dfsadmin -report          # live DataNodes, capacity
+
+# 5. After the Spark job
+hdfs dfs -ls -R /data/fraud/results/
