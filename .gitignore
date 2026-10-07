@@ -1,0 +1,20 @@
+# Large / generated data (regenerate with data/generate_dataset.py)
+data/transactions.csv
+*.csv.zip
+results/processed_parquet/
+results/spark_out/_SUCCESS
+**/_SUCCESS
+**/.*.crc
+spark-warehouse/
+metastore_db/
+derby.log
+# Python / notebooks
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
