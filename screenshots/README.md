@@ -1,4 +1,4 @@
-# Evidence screenshots (add your own)
+# Evidence screenshots
 
 Save as PNG with these names. `figs/` holds generated charts used in the report.
 
