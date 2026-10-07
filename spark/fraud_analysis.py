@@ -8,7 +8,7 @@ Usage (cluster):  spark-submit --master yarn fraud_analysis.py \
                       hdfs://namenode:8020/data/fraud/results
 Usage (local):    python fraud_analysis.py transactions.csv ./results/spark_out
 """
-import sys, json, time
+import os, sys, json, time
 from pyspark.sql import SparkSession, Window
 from pyspark.sql import functions as F
 from pyspark.ml import Pipeline
@@ -18,9 +18,16 @@ from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.functions import vector_to_array
 
 src, out = sys.argv[1], sys.argv[2]
-spark = (SparkSession.builder.appName("CreditCardFraudAnalytics")
-         .master("local[2]").config("spark.driver.memory", "4g")
-         .config("spark.sql.shuffle.partitions", "8").getOrCreate())
+def _session(app):
+    """Master is chosen by the launcher: spark-submit --master ..., or SPARK_MASTER env,
+    or (plain `python`) local[2]. Nothing is hardcoded so --master yarn really is used."""
+    b = SparkSession.builder.appName(app).config("spark.sql.shuffle.partitions", os.environ.get("SHUFFLE_PARTITIONS", "8"))
+    if os.environ.get("SPARK_MASTER"):
+        b = b.master(os.environ["SPARK_MASTER"])
+    elif "PYSPARK_GATEWAY_PORT" not in os.environ:      # plain `python fraud_analysis.py`
+        b = b.master("local[2]").config("spark.driver.memory", os.environ.get("SPARK_DRIVER_MEMORY", "4g"))
+    return b.getOrCreate()
+spark = _session("CreditCardFraudAnalytics")
 spark.sparkContext.setLogLevel("ERROR")
 log, t0 = {}, time.time()
 def tick(k): log.setdefault("timings_sec", {})[k] = round(time.time() - t0, 1)
@@ -103,7 +110,8 @@ for name, sdf in summaries.items():
 tick("aggregations_and_write")
 
 # Processed (columnar, partitioned) copy of the data for downstream use
-df2.drop("log_amount").write.mode("overwrite").partitionBy("txn_month").parquet(f"{out}/../processed_parquet")
+processed_path = out.rstrip("/").rsplit("/", 1)[0] + "/processed"      # sibling of results/, e.g. /data/fraud/processed
+df2.drop("log_amount").write.mode("overwrite").partitionBy("txn_month").parquet(processed_path)
 tick("parquet_write")
 
 # 5. MACHINE LEARNING -------------------------------------------------------
@@ -171,7 +179,13 @@ log["lr_numeric_coefficients"] = [(a, round(b, 3)) for a, b in coef_list]
 tick("evaluate")
 
 # 6. SAVE LOG ---------------------------------------------------------------
-import os; os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
-with open(f"{out}/../pipeline_metrics.json", "w") as f: json.dump(log, f, indent=1, default=str)
-print(json.dumps(log, indent=1, default=str))
+payload = json.dumps(log, indent=1, default=str)
+if "://" in out:                                   # HDFS (or other Hadoop FS): save through Spark, never open()
+    spark.sparkContext.parallelize([payload], 1).saveAsTextFile(out.rstrip("/") + "/pipeline_metrics")
+    with open("pipeline_metrics.json", "w") as f: f.write(payload)   # local copy in the working directory
+else:                                              # local run: results/pipeline_metrics.json next to spark_out/
+    local_dir = os.path.dirname(out.rstrip("/")) or "."
+    os.makedirs(local_dir, exist_ok=True)
+    with open(os.path.join(local_dir, "pipeline_metrics.json"), "w") as f: f.write(payload)
+print(payload)
 spark.stop()

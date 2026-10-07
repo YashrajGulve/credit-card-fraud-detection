@@ -40,7 +40,7 @@ Models were trained on Jan to Sep and tested on Oct to Dec, with class weights f
 data/        generate_dataset.py, sample/, README.md (data dictionary)
 hdfs/        hdfs_commands.txt
 hive/        01_create_database.sql, 02_create_tables.sql, 03_analysis_queries.sql
-spark/       fraud_analysis.py, run_sql_queries.py, make_charts.py
+spark/       hdfs_connect.py, fraud_analysis.py, run_sql_queries.py, make_charts.py
 hbase/       hbase_commands.txt
 pig/         fraud_analysis.pig
 results/     Hive query outputs, Spark summaries, pipeline_metrics.json
@@ -59,7 +59,7 @@ docs/        report (docx), architecture, Docker guide, contributions, project p
 
 Java 17 or newer is needed for PySpark.
 
-**Course Docker environment (HDFS, Hive, YARN, Spark):** follow [docs/DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md).
+**Course Docker environment (HDFS, Hive, YARN, Spark):** follow [docs/DOCKER_GUIDE.md](docs/DOCKER_GUIDE.md). The quickest route is `spark/hdfs_connect.py`, which uploads the CSV to HDFS and runs the analysis there.
 
 ## Documentation
 

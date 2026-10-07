@@ -2,6 +2,7 @@
 data/transactions.csv
 *.csv.zip
 results/processed_parquet/
+results/processed/
 results/spark_out/_SUCCESS
 **/_SUCCESS
 **/.*.crc

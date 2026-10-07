@@ -32,6 +32,23 @@ Container names, profiles and ports below are common defaults. Confirm yours wit
 
 Compare with `results/hive/hive_Q1.csv` to `hive_Q8.csv`; they should match.
 
+## 3b. One-script option: `spark/hdfs_connect.py`
+
+Connects to the NameNode, creates `/data/fraud/{raw,processed,results}`, uploads the CSV, lists and reads it back, and optionally runs the whole analysis on the HDFS data.
+Run it inside a container on the compose network so the name `namenode` resolves:
+
+    docker cp spark/. spark-master:/opt/fraud/
+    docker cp data/transactions.csv spark-master:/tmp/transactions.csv
+    docker exec -it spark-master spark-submit --master spark://spark-master:7077 \
+        /opt/fraud/hdfs_connect.py --local-csv /tmp/transactions.csv --run-analysis
+
+    # connection test only
+    docker exec -it spark-master spark-submit /opt/fraud/hdfs_connect.py --check-only
+
+Flags: `--hdfs-uri` (default `hdfs://namenode:8020`), `--base` (default `/data/fraud`), `--master` (`yarn` or `spark://spark-master:7077`), `--overwrite`.
+If PySpark reports a missing `numpy` on the executors, run `pip install numpy` inside the Spark containers.
+The script was tested end to end against a local `file://` filesystem in place of HDFS; it has not been run against your containers.
+
 ## 4. Spark
 
     docker cp spark/fraud_analysis.py spark-master:/tmp/
