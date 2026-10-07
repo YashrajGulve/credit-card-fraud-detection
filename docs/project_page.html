@@ -1,0 +1,328 @@
+<title>Credit Card Fraud Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one scrolling report. Sticky section nav, then figures and tables in a 1040px column. Infrastructure is blue, fraud is red. */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --ink:#14202b; --muted:#566473; --line:#dce2e9; --soft:#e9eef4;
+  --blue:#2a6db0; --blue-soft:#dbe8f5; --fraud:#c2402e; --fraud-soft:#f8e1dc; --ok:#2a7a58; --warn:#9a6a00; --warn-soft:#fbf0d4;
+  --code:#eef2f6;
+  --font-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d141b; --surface:#141d26; --ink:#e5ebf1; --muted:#93a1b0; --line:#26333f; --soft:#1b2733;
+  --blue:#69a5e0; --blue-soft:#1b3047; --fraud:#ef7b69; --fraud-soft:#3a1f1b; --ok:#5fc296; --warn:#e3b341; --warn-soft:#33290f; --code:#0f1820; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d141b; --surface:#141d26; --ink:#e5ebf1; --muted:#93a1b0; --line:#26333f; --soft:#1b2733;
+  --blue:#69a5e0; --blue-soft:#1b3047; --fraud:#ef7b69; --fraud-soft:#3a1f1b; --ok:#5fc296; --warn:#e3b341; --warn-soft:#33290f; --code:#0f1820; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.55;padding-inline:16px}
+.wrap{max-width:1040px;margin:0 auto;padding-block:0 64px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(30px,5.4vw,50px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:clamp(22px,3.2vw,28px);font-weight:600}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+.mono{font-family:var(--font-mono)}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header.top{padding-block:40px 24px;display:grid;gap:14px}
+header.top p.lead{max-width:62ch;color:var(--muted);font-size:17px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;padding-block:8px;margin-inline:-16px;padding-inline:16px}
+nav a{color:var(--muted);text-decoration:none;font-size:14px;padding:6px 12px;border-radius:6px;white-space:nowrap}
+nav a:hover,nav a:focus-visible{background:var(--soft);color:var(--ink);outline:none}
+nav a:focus-visible{box-shadow:0 0 0 2px var(--blue)}
+section{padding-top:48px;display:grid;gap:18px}
+section>p.sub{max-width:68ch;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.kpi{background:var(--surface);padding:14px 16px;display:grid;gap:2px;min-width:0}
+.kpi b{font-family:var(--font-display);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.kpi.red b{color:var(--fraud)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 14px;border-radius:0 6px 6px 0;font-size:14px}
+.note b{display:block;margin-bottom:2px}
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:10px;min-width:0}
+figcaption{font-size:13.5px;color:var(--muted);max-width:76ch}
+.scroll{overflow-x:auto}
+svg{display:block;width:100%;height:auto;color:var(--ink)}
+svg text{font-family:var(--font-body);fill:currentColor}
+.grid2{align-items:start;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablebox{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+.tablebox table{min-width:560px}
+code,pre{font-family:var(--font-mono);font-size:12.8px}
+code{background:var(--code);padding:1px 5px;border-radius:4px}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:14px;margin:0;overflow-x:auto;line-height:1.6}
+pre .c{color:var(--muted)}
+.pill{display:inline-block;font-family:var(--font-mono);font-size:11.5px;padding:2px 8px;border-radius:99px;background:var(--blue-soft);color:var(--blue);white-space:nowrap}
+.pill.full{background:var(--soft);color:var(--muted)}
+.steps{display:grid;gap:12px;counter-reset:s;padding:0;margin:0;list-style:none}
+.steps li{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;min-width:0}
+.steps li::before{counter-increment:s;content:counter(s);font-family:var(--font-mono);font-size:13px;width:28px;height:28px;border-radius:50%;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;margin-top:1px}
+.steps li>div{min-width:0}
+.steps strong{display:block}
+.steps pre{margin-top:6px}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:6px 9px;border-radius:6px;opacity:0;transition:opacity .08s;z-index:20;max-width:240px;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+button.theme{font:inherit;font-size:13px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;justify-self:start}
+button.theme:hover{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){#tip{transition:none}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">HCL GUVI × Jain University · Big Data capstone · Group 2</div>
+  <h1>Credit Card Fraud Pipeline</h1>
+  <p class="lead">One million card transactions moved through HDFS, Hive and Spark to find where fraud concentrates and to rank transactions by risk. Every tool runs as a Docker container on the student's machine.</p>
+  <div class="kpis" role="list">
+    <div class="kpi" role="listitem"><b>1,000,000</b><span>transactions analysed</span></div>
+    <div class="kpi red" role="listitem"><b>5,290</b><span>fraud cases, 0.529%</span></div>
+    <div class="kpi red" role="listitem"><b>Rs 16.3M</b><span>value of fraud</span></div>
+    <div class="kpi" role="listitem"><b>0.861</b><span>best model AUC-ROC</span></div>
+    <div class="kpi" role="listitem"><b>23.6%</b><span>fraud caught reviewing 1%</span></div>
+  </div>
+  <div class="note"><b>Synthetic data</b>The transactions were generated by a script, with fraud patterns built in. The findings show the pipeline working and say nothing about real-world fraud. Swap in a real dataset and the same scripts run unchanged.</div>
+  <button class="theme" id="themeBtn" type="button">Switch theme</button>
+</header>
+
+<nav aria-label="Sections">
+  <a href="#pipeline">Pipeline</a><a href="#findings">Findings</a><a href="#model">Risk model</a><a href="#docker">Docker</a><a href="#run">Run it</a>
+</nav>
+
+<section id="pipeline">
+  <h2>How the pieces connect</h2>
+  <p class="sub">Data moves left to right. Each box is a service from the course Docker Compose environment, and the line beneath it names its containers.</p>
+  <figure>
+    <div class="scroll">
+    <svg viewBox="0 0 900 400" style="min-width:760px" role="img" aria-label="Pipeline from CSV on the host into HDFS, Hive, Spark on YARN and results, with HBase and Pig below, all inside a Docker Compose boundary">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+      <!-- docker boundary -->
+      <rect x="150" y="14" width="738" height="372" rx="12" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <text x="166" y="38" font-size="12" style="fill:var(--blue)" font-weight="600">DOCKER COMPOSE NETWORK  (one container per service)</text>
+      <!-- host -->
+      <rect x="12" y="130" width="116" height="78" rx="8" fill="var(--surface)" stroke="currentColor" stroke-opacity=".35"/>
+      <text x="70" y="158" font-size="13" font-weight="600" text-anchor="middle">Your laptop</text>
+      <text x="70" y="177" font-size="11.5" text-anchor="middle" style="fill:var(--muted)">transactions.csv</text>
+      <text x="70" y="194" font-size="11.5" text-anchor="middle" style="fill:var(--muted)">93 MB</text>
+      <text x="70" y="226" font-size="11" text-anchor="middle" style="fill:var(--muted)">docker cp, then</text>
+      <text x="70" y="241" font-size="11" text-anchor="middle" style="fill:var(--muted)">hdfs dfs -put</text>
+      <!-- stages -->
+      <g font-size="13">
+        <rect x="172" y="120" width="132" height="98" rx="8" fill="var(--blue-soft)" stroke="var(--blue)"/>
+        <text x="238" y="146" text-anchor="middle" font-weight="600">HDFS</text>
+        <text x="238" y="166" text-anchor="middle" font-size="11" style="fill:var(--muted)">namenode</text>
+        <text x="238" y="182" text-anchor="middle" font-size="11" style="fill:var(--muted)">datanode</text>
+        <text x="238" y="203" text-anchor="middle" font-size="11" class="mono">/data/fraud/raw</text>
+
+        <rect x="340" y="120" width="132" height="98" rx="8" fill="var(--blue-soft)" stroke="var(--blue)"/>
+        <text x="406" y="146" text-anchor="middle" font-weight="600">Hive</text>
+        <text x="406" y="166" text-anchor="middle" font-size="11" style="fill:var(--muted)">metastore</text>
+        <text x="406" y="182" text-anchor="middle" font-size="11" style="fill:var(--muted)">hiveserver2</text>
+        <text x="406" y="203" text-anchor="middle" font-size="11" class="mono">8 SQL queries</text>
+
+        <rect x="508" y="120" width="150" height="98" rx="8" fill="var(--blue-soft)" stroke="var(--blue)"/>
+        <text x="583" y="146" text-anchor="middle" font-weight="600">Spark / PySpark</text>
+        <text x="583" y="166" text-anchor="middle" font-size="11" style="fill:var(--muted)">spark-master, worker</text>
+        <text x="583" y="182" text-anchor="middle" font-size="11" style="fill:var(--muted)">jupyter notebook</text>
+        <text x="583" y="203" text-anchor="middle" font-size="11" class="mono">clean · ML</text>
+
+        <rect x="694" y="120" width="180" height="98" rx="8" fill="var(--fraud-soft)" stroke="var(--fraud)"/>
+        <text x="784" y="146" text-anchor="middle" font-weight="600">Results</text>
+        <text x="784" y="166" text-anchor="middle" font-size="11" style="fill:var(--muted)">written back to HDFS</text>
+        <text x="784" y="182" text-anchor="middle" font-size="11" style="fill:var(--muted)">/data/fraud/results</text>
+        <text x="784" y="203" text-anchor="middle" font-size="11" class="mono">11 tables + metrics</text>
+      </g>
+      <!-- YARN band -->
+      <rect x="490" y="238" width="186" height="40" rx="8" fill="none" stroke="var(--blue)" stroke-dasharray="3 3"/>
+      <text x="583" y="256" font-size="12" text-anchor="middle" font-weight="600">YARN</text>
+      <text x="583" y="271" font-size="11" text-anchor="middle" style="fill:var(--muted)">resourcemanager, nodemanager</text>
+      <line x1="583" y1="238" x2="583" y2="220" stroke="var(--blue)" marker-end="url(#ar)" style="color:var(--blue)"/>
+      <!-- optional -->
+      <rect x="694" y="300" width="84" height="64" rx="8" fill="var(--surface)" stroke="currentColor" stroke-opacity=".35"/>
+      <text x="736" y="326" font-size="13" font-weight="600" text-anchor="middle">HBase</text>
+      <text x="736" y="344" font-size="11" text-anchor="middle" style="fill:var(--muted)">card lookup</text>
+      <rect x="790" y="300" width="84" height="64" rx="8" fill="var(--surface)" stroke="currentColor" stroke-opacity=".35"/>
+      <text x="832" y="326" font-size="13" font-weight="600" text-anchor="middle">Pig</text>
+      <text x="832" y="344" font-size="11" text-anchor="middle" style="fill:var(--muted)">cross-check</text>
+      <!-- arrows -->
+      <g stroke="currentColor" stroke-width="1.5" fill="none">
+        <line x1="128" y1="169" x2="170" y2="169" marker-end="url(#ar)"/>
+        <line x1="304" y1="169" x2="338" y2="169" marker-end="url(#ar)"/>
+        <line x1="472" y1="169" x2="506" y2="169" marker-end="url(#ar)"/>
+        <line x1="658" y1="169" x2="692" y2="169" marker-end="url(#ar)"/>
+        <path d="M784 220 V300" marker-end="url(#ar)" stroke-dasharray="4 3"/>
+      </g>
+      <g font-size="11" style="fill:var(--muted)">
+        <text x="321" y="162" text-anchor="middle">reads</text>
+        <text x="489" y="162" text-anchor="middle">reads</text>
+        <text x="675" y="162" text-anchor="middle">writes</text>
+        <text x="792" y="262">loads profile</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>HDFS holds the raw file once. Hive and Spark both read it from there, so the SQL answers and the Spark answers come from the same data. Dashed lines are optional or secondary paths.</figcaption>
+  </figure>
+</section>
+
+<section id="findings">
+  <h2>What the data shows</h2>
+  <p class="sub">All figures come from running the eight Hive-style queries on the full million rows. Hover or tap a mark for its values. The red dashed line is the overall fraud rate of 0.529%.</p>
+  <div class="grid2">
+    <figure><h3>Fraud rate by merchant category</h3><div id="cCat"></div><figcaption>Gift cards, jewelry and electronics run at 2.6 to 3.8 times the overall rate. Together they are 10% of transactions and 30% of frauds.</figcaption></figure>
+    <figure><h3>Fraud rate by channel</h3><div id="cChan"></div><figcaption>Online purchases without the physical card are 29.9% of volume and 68.8% of fraud, about six times the POS rate.</figcaption></figure>
+  </div>
+  <figure><h3>Fraud rate by hour of day</h3><div id="cHour"></div>
+    <figcaption>Between 23:00 and 04:59 the fraud rate is 1.16%, against 0.49% for the rest of the day. That window is 6.5% of transactions.</figcaption></figure>
+  <div class="tablebox"><table>
+    <thead><tr><th>International</th><th>Velocity (24 h)</th><th class="num">Transactions</th><th class="num">Frauds</th><th class="num">Fraud rate</th></tr></thead>
+    <tbody>
+    <tr><td>Yes</td><td>5 or more</td><td class="num">2,686</td><td class="num">199</td><td class="num" style="color:var(--fraud);font-weight:600">7.41%</td></tr>
+    <tr><td>Yes</td><td>Normal</td><td class="num">31,798</td><td class="num">761</td><td class="num">2.39%</td></tr>
+    <tr><td>No</td><td>5 or more</td><td class="num">76,034</td><td class="num">949</td><td class="num">1.25%</td></tr>
+    <tr><td>No</td><td>Normal</td><td class="num">889,482</td><td class="num">3,381</td><td class="num">0.38%</td></tr>
+    </tbody></table></div>
+  <p class="sub">International use combined with a burst of activity is about 14 times the overall rate. Amount also matters: the rate climbs from 0.37% under Rs 500 to 1.01% at Rs 10,000 and above.</p>
+</section>
+
+<section id="model">
+  <h2>Ranking transactions by risk</h2>
+  <p class="sub">Three Spark MLlib models were trained on January to September and tested on October to December. Accuracy is useless here because 99.47% of transactions are genuine, so each model is judged by how much fraud lands in a small review queue.</p>
+  <figure><h3>Share of fraud caught when only the riskiest transactions are reviewed</h3>
+    <div class="legend"><span><i style="background:var(--blue)"></i>Review top 1%</span><span><i style="background:var(--blue);opacity:.45"></i>Review top 5%</span></div>
+    <div id="cModel"></div>
+    <figcaption>Logistic regression did best (AUC-ROC 0.861). A 1% queue of 2,602 test transactions holds 312 of 1,322 frauds, a hit rate of 12.0% against a base rate of 0.525%. About 88% of that queue is still genuine, so the score should prioritise review or trigger extra authentication, never block on its own.</figcaption></figure>
+</section>
+
+<section id="docker">
+  <h2>Where Docker fits</h2>
+  <p class="sub">Hadoop, Hive, Spark, HBase and Pig are normally installed across a cluster of servers. The course packages them as Docker containers described in one <code>docker-compose.yml</code>, so a laptop can run the whole stack with one command. Each tool is a separate container, and Compose puts them on a shared network so they find each other by name, such as <code>namenode</code>.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Container</th><th>Tool</th><th>What it does in this project</th><th>Typical UI port</th></tr></thead>
+    <tbody>
+    <tr><td><code>namenode</code> <span class="pill">core</span></td><td>HDFS</td><td>Keeps file metadata. <code>/data/fraud/raw/transactions.csv</code> is registered here.</td><td class="mono">9870</td></tr>
+    <tr><td><code>datanode</code> <span class="pill">core</span></td><td>HDFS</td><td>Stores the actual data blocks.</td><td class="mono">9864</td></tr>
+    <tr><td><code>resourcemanager</code>, <code>nodemanager</code> <span class="pill">core</span></td><td>YARN</td><td>Hands CPU and memory to Spark jobs.</td><td class="mono">8088</td></tr>
+    <tr><td><code>hive-metastore</code>, <code>hiveserver2</code> <span class="pill">core</span></td><td>Hive</td><td>Holds the <code>fraud_analytics.transactions</code> table definition and runs the SQL.</td><td class="mono">10000</td></tr>
+    <tr><td><code>spark-master</code>, <code>spark-worker</code> <span class="pill full">full</span></td><td>Spark</td><td>Runs the PySpark pipeline and model training.</td><td class="mono">8080</td></tr>
+    <tr><td><code>jupyter</code> <span class="pill full">full</span></td><td>PySpark notebook</td><td>Where the notebook version of the analysis runs.</td><td class="mono">8888</td></tr>
+    <tr><td><code>hbase</code>, <code>pig</code> <span class="pill full">full</span></td><td>HBase, Pig</td><td>Card risk-profile lookup and the channel cross-check.</td><td class="mono">16010</td></tr>
+    </tbody></table></div>
+  <p class="sub">Container names, profiles and ports above are the common defaults. Your supplied compose file is the source of truth, so confirm with <code>docker ps</code>. The course guide says not to edit that file unless the trainer asks.</p>
+  <figure>
+    <h3>Why containers help</h3>
+    <div class="grid2" style="gap:12px">
+      <div><b>Same environment for all five students</b><p style="color:var(--muted);font-size:14px">Everyone runs identical versions of Hadoop and Spark, so a script that works for one works for all.</p></div>
+      <div><b>Data survives, services are disposable</b><p style="color:var(--muted);font-size:14px">HDFS data sits in Docker volumes. Restarting a failed container does not lose the file, and troubleshooting a failure starts with <code>docker logs</code>.</p></div>
+      <div><b>Cluster behaviour on one machine</b><p style="color:var(--muted);font-size:14px">The NameNode, DataNode, YARN and Spark worker are separate processes talking over a network, which is what a real cluster does.</p></div>
+      <div><b>Same code moves to a real cluster</b><p style="color:var(--muted);font-size:14px">Only the paths and the master URL change. The SQL and PySpark stay as written.</p></div>
+    </div>
+  </figure>
+</section>
+
+<section id="run">
+  <h2>Running it in your Docker environment</h2>
+  <p class="sub">Run these from the folder holding the supplied compose file. Hive and HDFS need the core profile. Spark, Jupyter, HBase and Pig need the full profile.</p>
+  <ol class="steps">
+    <li><div><strong>Start the containers and check they are up</strong>
+<pre>docker compose --profile full up -d      <span class="c"># or the profile flag your trainer gave you</span>
+docker ps                                <span class="c"># every service should show "Up"</span></pre></div></li>
+    <li><div><strong>Copy the data in and load it into HDFS</strong>
+<pre>docker cp transactions.csv namenode:/tmp/
+docker exec -it namenode bash
+hdfs dfs -mkdir -p /data/fraud/raw /data/fraud/processed /data/fraud/results
+hdfs dfs -put /tmp/transactions.csv /data/fraud/raw/
+hdfs dfs -ls -h /data/fraud/raw/</pre></div></li>
+    <li><div><strong>Create the Hive table and run the eight queries</strong>
+<pre>docker cp hive/. hiveserver2:/tmp/hive/
+docker exec -it hiveserver2 beeline -u jdbc:hive2://localhost:10000 -f /tmp/hive/02_create_tables.sql
+docker exec -it hiveserver2 beeline -u jdbc:hive2://localhost:10000 -f /tmp/hive/03_analysis_queries.sql</pre></div></li>
+    <li><div><strong>Run the Spark pipeline on the cluster</strong>
+<pre>docker cp spark/fraud_analysis.py spark-master:/tmp/
+docker exec -it spark-master spark-submit --master yarn /tmp/fraud_analysis.py \
+  hdfs://namenode:8020/data/fraud/raw/transactions.csv \
+  hdfs://namenode:8020/data/fraud/results</pre></div></li>
+    <li><div><strong>Capture evidence for the evaluation</strong>
+<p style="color:var(--muted)">Screenshot <code>hdfs dfs -ls</code>, the NameNode page, the Beeline query output, the Spark master page and the YARN application. Compare the Beeline results with the numbers on this page.</p></div></li>
+  </ol>
+  <div class="note"><b>What was actually run for this page</b>The Spark pipeline and the eight SQL queries ran on all one million rows in Spark local mode, outside Docker. The Docker, HDFS, Hive, HBase and Pig steps above are prepared but not yet run, so they still need running on your machine.</div>
+</section>
+</div>
+<div id="tip" role="status"></div>
+
+<script>
+const D = {"overall": 0.529, "cat": [{"merchant_category": "Gift Cards", "txns": 19918, "fraud_txns": 405, "fraud_pct": 2.033}, {"merchant_category": "Jewelry", "txns": 19863, "fraud_txns": 372, "fraud_pct": 1.873}, {"merchant_category": "Electronics", "txns": 60052, "fraud_txns": 827, "fraud_pct": 1.377}, {"merchant_category": "Travel", "txns": 49569, "fraud_txns": 470, "fraud_pct": 0.948}, {"merchant_category": "Online Services", "txns": 69725, "fraud_txns": 521, "fraud_pct": 0.747}, {"merchant_category": "Entertainment", "txns": 80311, "fraud_txns": 434, "fraud_pct": 0.54}, {"merchant_category": "Apparel", "txns": 90227, "fraud_txns": 436, "fraud_pct": 0.483}, {"merchant_category": "Fuel", "txns": 120275, "fraud_txns": 486, "fraud_pct": 0.404}, {"merchant_category": "Restaurant", "txns": 150051, "fraud_txns": 483, "fraud_pct": 0.322}, {"merchant_category": "Grocery", "txns": 200076, "fraud_txns": 556, "fraud_pct": 0.278}, {"merchant_category": "Healthcare", "txns": 59998, "fraud_txns": 141, "fraud_pct": 0.235}, {"merchant_category": "Utilities", "txns": 79935, "fraud_txns": 159, "fraud_pct": 0.199}], "chan": [{"channel": "Online", "card_present": 0, "txns": 299425, "fraud_txns": 3641, "fraud_pct": 1.216}, {"channel": "ATM", "card_present": 1, "txns": 69730, "fraud_txns": 377, "fraud_pct": 0.541}, {"channel": "Contactless", "card_present": 1, "txns": 250349, "fraud_txns": 519, "fraud_pct": 0.207}, {"channel": "POS", "card_present": 1, "txns": 380496, "fraud_txns": 753, "fraud_pct": 0.198}], "hour": [{"txn_hour": 0, "txns": 9264, "fraud_pct": 1.187}, {"txn_hour": 1, "txns": 9188, "fraud_pct": 1.11}, {"txn_hour": 2, "txns": 9134, "fraud_pct": 1.182}, {"txn_hour": 3, "txns": 9304, "fraud_pct": 1.107}, {"txn_hour": 4, "txns": 9079, "fraud_pct": 1.157}, {"txn_hour": 5, "txns": 18441, "fraud_pct": 0.504}, {"txn_hour": 6, "txns": 27950, "fraud_pct": 0.522}, {"txn_hour": 7, "txns": 46049, "fraud_pct": 0.502}, {"txn_hour": 8, "txns": 55747, "fraud_pct": 0.524}, {"txn_hour": 9, "txns": 55525, "fraud_pct": 0.51}, {"txn_hour": 10, "txns": 55779, "fraud_pct": 0.495}, {"txn_hour": 11, "txns": 64953, "fraud_pct": 0.448}, {"txn_hour": 12, "txns": 64762, "fraud_pct": 0.513}, {"txn_hour": 13, "txns": 55213, "fraud_pct": 0.442}, {"txn_hour": 14, "txns": 55533, "fraud_pct": 0.465}, {"txn_hour": 15, "txns": 55522, "fraud_pct": 0.456}, {"txn_hour": 16, "txns": 55343, "fraud_pct": 0.472}, {"txn_hour": 17, "txns": 64966, "fraud_pct": 0.499}, {"txn_hour": 18, "txns": 64946, "fraud_pct": 0.439}, {"txn_hour": 19, "txns": 64417, "fraud_pct": 0.52}, {"txn_hour": 20, "txns": 55726, "fraud_pct": 0.51}, {"txn_hour": 21, "txns": 46416, "fraud_pct": 0.474}, {"txn_hour": 22, "txns": 28148, "fraud_pct": 0.473}, {"txn_hour": 23, "txns": 18595, "fraud_pct": 1.188}], "models": [{"model": "Logistic Regression", "auc_roc": 0.8609, "top1pct": {"flagged": 2602, "caught_fraud": 312, "recall_pct": 23.6, "precision_pct": 11.99, "lift": 22.8, "fraud_amount_caught_pct": 23.8}, "top5pct": {"flagged": 12661, "caught_fraud": 640, "recall_pct": 48.41, "precision_pct": 5.05, "lift": 9.6, "fraud_amount_caught_pct": 54.57}}, {"model": "Random Forest", "auc_roc": 0.8412, "top1pct": {"flagged": 2610, "caught_fraud": 241, "recall_pct": 18.23, "precision_pct": 9.23, "lift": 17.6, "fraud_amount_caught_pct": 14.41}, "top5pct": {"flagged": 12617, "caught_fraud": 574, "recall_pct": 43.42, "precision_pct": 4.55, "lift": 8.7, "fraud_amount_caught_pct": 40.0}}, {"model": "Gradient Boosting", "auc_roc": 0.8547, "top1pct": {"flagged": 2589, "caught_fraud": 282, "recall_pct": 21.33, "precision_pct": 10.89, "lift": 20.7, "fraud_amount_caught_pct": 24.47}, "top5pct": {"flagged": 12651, "caught_fraud": 604, "recall_pct": 45.69, "precision_pct": 4.77, "lift": 9.1, "fraud_amount_caught_pct": 48.58}}]};
+const tip = document.getElementById('tip');
+function showTip(e, html){ tip.innerHTML = html; tip.style.opacity = 1; const w = tip.offsetWidth; let x = e.clientX + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; tip.style.left = Math.max(8, x) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; }
+function hideTip(){ tip.style.opacity = 0; }
+const ns = 'http://www.w3.org/2000/svg';
+function el(n, a, p){ const e = document.createElementNS(ns, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; }
+function txt(p, x, y, s, a){ const t = el('text', Object.assign({x, y}, a || {}), p); t.textContent = s; return t; }
+function bindTip(node, html){ node.addEventListener('mousemove', e => showTip(e, html)); node.addEventListener('mouseleave', hideTip); node.addEventListener('click', e => showTip(e, html)); node.setAttribute('tabindex', '0'); node.addEventListener('focus', () => { const r = node.getBoundingClientRect(); showTip({clientX: r.right, clientY: r.top}, html); }); node.addEventListener('blur', hideTip); }
+
+function hbar(id, rows, opts){
+  const W = 460, rowH = 26, L = opts.left, R = 56, T = 8, H = T + rows.length * rowH + 34;
+  const svg = el('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.label});
+  const max = opts.max, x = v => L + (W - L - R) * v / max;
+  for (let t = 0; t <= max + 1e-9; t += opts.step) { el('line', {x1: x(t), x2: x(t), y1: T, y2: H - 28, stroke: 'currentColor', 'stroke-opacity': .12}, svg); txt(svg, x(t), H - 12, t.toFixed(1), {'font-size': 11, 'text-anchor': 'middle', 'fill-opacity': .6}); }
+  rows.forEach((r, i) => {
+    const y = T + i * rowH;
+    txt(svg, L - 8, y + rowH / 2 + 4, r.label, {'font-size': 12, 'text-anchor': 'end'});
+    const bar = el('rect', {x: L, y: y + 4, width: Math.max(2, x(r.v) - L), height: rowH - 9, rx: 3, fill: r.hot ? 'var(--fraud)' : 'var(--blue)'}, svg);
+    txt(svg, x(r.v) + 6, y + rowH / 2 + 4, r.v.toFixed(2) + '%', {'font-size': 11.5});
+    bindTip(bar, `<b>${r.label}</b><br>${r.v.toFixed(3)}% fraud<br>${r.n.toLocaleString()} transactions, ${r.f.toLocaleString()} frauds`);
+  });
+  const bx = x(D.overall);
+  el('line', {x1: bx, x2: bx, y1: T, y2: H - 28, stroke: 'var(--fraud)', 'stroke-width': 1.5, 'stroke-dasharray': '5 4'}, svg);
+  document.getElementById(id).appendChild(svg);
+}
+const cats = D.cat.slice().sort((a, b) => b.fraud_pct - a.fraud_pct);
+hbar('cCat', cats.map((r, i) => ({label: r.merchant_category, v: r.fraud_pct, n: r.txns, f: r.fraud_txns, hot: i < 3})), {left: 108, max: 2.5, step: .5, label: 'Fraud rate by merchant category'});
+const ch = D.chan.slice().sort((a, b) => b.fraud_pct - a.fraud_pct);
+hbar('cChan', ch.map((r, i) => ({label: r.channel + (r.card_present ? '' : ' (no card)'), v: r.fraud_pct, n: r.txns, f: r.fraud_txns, hot: !r.card_present})), {left: 124, max: 1.5, step: .5, label: 'Fraud rate by channel'});
+
+(function(){
+  const W = 900, H = 290, L = 46, R = 16, T = 16, B = 44, max = 1.4;
+  const svg = el('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Fraud rate by hour of day'});
+  const x = h => L + (W - L - R) * (h + .5) / 24, y = v => T + (H - T - B) * (1 - v / max);
+  for (let t = 0; t <= max + 1e-9; t += .2) { el('line', {x1: L, x2: W - R, y1: y(t), y2: y(t), stroke: 'currentColor', 'stroke-opacity': .12}, svg); txt(svg, L - 8, y(t) + 4, t.toFixed(1) + '%', {'font-size': 11, 'text-anchor': 'end', 'fill-opacity': .6}); }
+  for (let h = 0; h < 24; h += 2) txt(svg, x(h), H - 22, String(h).padStart(2, '0'), {'font-size': 11, 'text-anchor': 'middle', 'fill-opacity': .6});
+  txt(svg, (L + W - R) / 2, H - 4, 'Hour of day', {'font-size': 11.5, 'text-anchor': 'middle', 'fill-opacity': .6});
+  // night shading
+  const night = [[0, 4], [23, 23]]; night.forEach(([a, b]) => el('rect', {x: x(a) - (W - L - R) / 48, y: T, width: (b - a + 1) * (W - L - R) / 24, height: H - T - B, fill: 'var(--fraud)', 'fill-opacity': .08}, svg));
+  const by = y(D.overall); el('line', {x1: L, x2: W - R, y1: by, y2: by, stroke: 'var(--fraud)', 'stroke-width': 1.5, 'stroke-dasharray': '5 4'}, svg);
+  txt(svg, x(14), by - 8, 'overall 0.53%', {'font-size': 11.5, 'text-anchor': 'middle', style: 'fill:var(--fraud)'});
+  el('polyline', {points: D.hour.map(r => `${x(r.txn_hour)},${y(r.fraud_pct)}`).join(' '), fill: 'none', stroke: 'var(--blue)', 'stroke-width': 2, 'stroke-linejoin': 'round'}, svg);
+  D.hour.forEach(r => { const c = el('circle', {cx: x(r.txn_hour), cy: y(r.fraud_pct), r: 4, fill: 'var(--blue)', stroke: 'var(--surface)', 'stroke-width': 2}, svg); const hit = el('circle', {cx: x(r.txn_hour), cy: y(r.fraud_pct), r: 14, fill: 'transparent'}, svg); bindTip(hit, `<b>${String(r.txn_hour).padStart(2, '0')}:00</b><br>${r.fraud_pct.toFixed(3)}% fraud<br>${r.txns.toLocaleString()} transactions`); });
+  txt(svg, x(2), T + 14, 'night window', {'font-size': 11.5, 'text-anchor': 'middle', style: 'fill:var(--fraud)'});
+  document.getElementById('cHour').appendChild(svg);
+})();
+
+(function(){
+  const W = 640, H = 300, L = 48, R = 12, T = 22, B = 56, max = 60;
+  const svg = el('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Recall at top 1 and top 5 percent for three models'});
+  const y = v => T + (H - T - B) * (1 - v / max), gw = (W - L - R) / D.models.length;
+  for (let t = 0; t <= max; t += 10) { el('line', {x1: L, x2: W - R, y1: y(t), y2: y(t), stroke: 'currentColor', 'stroke-opacity': .12}, svg); txt(svg, L - 8, y(t) + 4, t + '%', {'font-size': 11, 'text-anchor': 'end', 'fill-opacity': .6}); }
+  D.models.forEach((m, i) => {
+    const cx = L + gw * i + gw / 2, bw = 56;
+    [[m.top1pct.recall_pct, 1, -bw - 3], [m.top5pct.recall_pct, .45, 3]].forEach(([v, op, dx], k) => {
+      const r = el('rect', {x: cx + dx, y: y(v), width: bw, height: y(0) - y(v), rx: 3, fill: 'var(--blue)', 'fill-opacity': op}, svg);
+      txt(svg, cx + dx + bw / 2, y(v) - 6, v.toFixed(1) + '%', {'font-size': 12, 'text-anchor': 'middle'});
+      const t = k ? m.top5pct : m.top1pct;
+      bindTip(r, `<b>${m.model}</b><br>Review top ${k ? 5 : 1}%: ${t.flagged.toLocaleString()} transactions<br>Caught ${t.caught_fraud} frauds (${t.recall_pct}%)<br>Hit rate ${t.precision_pct}%, lift ${t.lift}x`);
+    });
+    txt(svg, cx, H - 30, m.model, {'font-size': 12.5, 'text-anchor': 'middle', 'font-weight': 600});
+    txt(svg, cx, H - 13, 'AUC-ROC ' + m.auc_roc.toFixed(3), {'font-size': 11.5, 'text-anchor': 'middle', 'fill-opacity': .65});
+  });
+  document.getElementById('cModel').appendChild(svg);
+})();
+
+(function(){
+  const b = document.getElementById('themeBtn'), r = document.documentElement;
+  b.addEventListener('click', () => { const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; });
+})();
+</script>
